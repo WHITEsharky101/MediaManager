@@ -1,0 +1,34 @@
+<head th:fragments="header" >
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/home">Media Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li sec:authorize="!isAuthenticated()" class="nav-item">
+                        <a class="nav-link active" aria-current="page" th:href="@{/register}">Register</a>
+                    </li>
+                    <li sec:authorize="!isAuthenticated()" class="nav-item">
+                        <a class="nav-link active" aria-current="page" th:href="@{/login}">Login</a>
+                    </li>
+                    <li sec:authorize="isAuthenticated()" class="nav-item">
+                        <a class="nav-link active" aria-current="page" th:href="@{/settings}">Settings</a>
+                    </li>
+<!--                    <li sec:authorize="isAuthenticated()" class="nav-item">-->
+<!--                        <a class="nav-link active" aria-current="page" th:href="@{/rename}">Rename</a>-->
+<!--                    </li>-->
+                    <li sec:authorize="hasRole('ADMIN')" class="nav-item">
+                        <a class="nav-link active" aria-current="page" th:href="@{/users}">Users</a>
+                    </li>
+                    <li sec:authorize="isAuthenticated()">
+                        <a class="nav-link active" aria-current="page" th:href="@{/logout}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</head>
