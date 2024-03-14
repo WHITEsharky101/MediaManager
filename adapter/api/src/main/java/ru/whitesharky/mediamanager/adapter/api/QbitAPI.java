@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
 public class QbitAPI extends API {
     private String username;
     private String password;
-    private HttpCookie SessionCookie;
+    private HttpCookie sessionCookie;
+    private Long sessionExpDate;
 
     public QbitAPI(String host, int port, String username, String password) {
         super(host, port, "/api/v2/");
@@ -24,19 +25,45 @@ public class QbitAPI extends API {
         this.password = password;
     }
 
-    public void loginAndSetSID() {
-        Map<String, String> postBody = new HashMap<>();
-        postBody.put("username", username);
-        postBody.put("password", password);
+    private void loginAndSetSID() {
+        if (!isSIDActive()) {
+            Map<String, String> postBody = new HashMap<>();
+            postBody.put("username", username);
+            postBody.put("password", password);
 
-        HttpResponse<String> response = getResponse(makeRequest("auth/login", postBody));
-        Pattern pattern = Pattern.compile("=(.*?);");
-        Matcher matcher = pattern.matcher(response.headers().allValues("set-cookie").getFirst());
-        if (matcher.find()) {
-            setSessionCookie(matcher.group(1));}
+            HttpResponse<String> response = getResponse(makeRequest("auth/login", postBody));
+            Pattern pattern = Pattern.compile("=(.*?);");
+            Matcher matcher = pattern.matcher(response.headers().allValues("set-cookie").getFirst());
+            if (matcher.find()) {
+                setSessionCookie(matcher.group(1));
+            }
+            setSessionExpDate();
+        }
+    }
+
+    private void setSessionExpDate() {
+        this.sessionExpDate = System.currentTimeMillis() + (getSessionTimeout()-10) * 60L;
+    }
+
+    private int getSessionTimeout() {
+        HttpResponse<String> response = getResponse(makeRequest("app/preferences"), getSessionCookie());
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode actualObj;
+        try {
+            actualObj = mapper.readTree(response.body());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return actualObj.get("web_ui_session_timeout").asInt();
+    }
+
+    private boolean isSIDActive() {
+        if (sessionExpDate == null) return false;
+        return System.currentTimeMillis() <= sessionExpDate;
     }
 
     public ArrayList<Torrent> getTorrentList() {
+        loginAndSetSID();
         HttpResponse<String> response = getResponse(makeRequest("torrents/info"), getSessionCookie());
         return splitInfoByTorrent(response.body());
     }
@@ -63,6 +90,7 @@ public class QbitAPI extends API {
     }
 
     public Torrent setTorrentContent(Torrent torrent) {
+        loginAndSetSID();
         ObjectMapper mapper = new ObjectMapper();
         Map<Integer, String> torrentFileName = new HashMap<>();
         HttpResponse<String> response =
@@ -97,6 +125,7 @@ public class QbitAPI extends API {
     }
 
     public void renameIncorrectFilesInTorrent(String torrentName) {
+        loginAndSetSID();
         Torrent torrent = getTorrentFromName(torrentName);
         String path = torrent.getPath();
         String hash = torrent.getHash();
@@ -134,12 +163,12 @@ public class QbitAPI extends API {
     }
 
     public HttpCookie getSessionCookie() {
-        return SessionCookie;
+        return sessionCookie;
     }
 
     public void setSessionCookie(String sessionID) {
-        SessionCookie = new HttpCookie("SID", sessionID);
-        SessionCookie.setVersion(0);
-        SessionCookie.setPath("/");
+        sessionCookie = new HttpCookie("SID", sessionID);
+        sessionCookie.setVersion(0);
+        sessionCookie.setPath("/");
     }
 }
