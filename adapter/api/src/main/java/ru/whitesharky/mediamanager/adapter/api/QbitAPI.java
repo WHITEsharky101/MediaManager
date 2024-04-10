@@ -8,9 +8,7 @@ import ru.whitesharky.mediamanager.domain.UserSettings;
 
 import java.net.HttpCookie;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,10 +61,14 @@ public class QbitAPI extends API {
         return System.currentTimeMillis() <= sessionExpDate;
     }
 
-    public ArrayList<Torrent> getTorrentList() {
+    public ArrayList<Torrent> getTorrentList(Map<String, String> parameters) {
         loginAndSetSID();
-        HttpResponse<String> response = getResponse(makeRequest("torrents/info"), getSessionCookie());
+        HttpResponse<String> response = getResponse(makeRequest("torrents/info", parameters), getSessionCookie());
         return splitInfoByTorrent(response.body());
+    }
+
+    public ArrayList<Torrent> getTorrentList() {
+        return getTorrentList(new HashMap<>());
     }
 
     private ArrayList<Torrent> splitInfoByTorrent(String allTorrentInfo) {
@@ -93,7 +95,7 @@ public class QbitAPI extends API {
     public Torrent setTorrentContent(Torrent torrent) {
         loginAndSetSID();
         ObjectMapper mapper = new ObjectMapper();
-        Map<Integer, String> torrentFileName = new HashMap<>();
+        Set<String> torrentFilesName = new HashSet<>();
         HttpResponse<String> response =
                 getResponse(makeRequest("torrents/files", Map.of("hash", torrent.getHash())), getSessionCookie());
         JsonNode actualObj;
@@ -103,10 +105,25 @@ public class QbitAPI extends API {
             throw new RuntimeException(e);
         }
         for (JsonNode oneObj : actualObj) {
-            torrentFileName.put(oneObj.get("index").asInt(),oneObj.get("name").asText());
+            torrentFilesName.add(oneObj.get("name").asText());
         }
-        torrent.setTorrentFiles(torrentFileName);
+        Map<Integer, String> filesNameMap = parseNamesToMap(torrentFilesName);
+        torrent.setTorrentFiles(filesNameMap);
         return torrent;
+    }
+
+    private Map<Integer, String> parseNamesToMap(Set<String> fileNames) {
+        //pattern [S0101]/[01]
+        Map<Integer, String> filesNameMap = new HashMap<>();
+        for (String name : fileNames) {
+            Pattern pattern = Pattern.compile("\\[\\d*]");
+            Matcher matcher = pattern.matcher(name);
+            if (matcher.find()) {
+                int index = Integer.parseInt(matcher.group(0).replaceAll("[\\[\\]]", ""));
+                filesNameMap.put(index, name);
+            }
+        }
+        return filesNameMap;
     }
 
     public ArrayList<Torrent> setAllTorrentsContent(ArrayList<Torrent> torrentList) {
@@ -125,13 +142,15 @@ public class QbitAPI extends API {
         return searchingTorrent;
     }
 
-    public void renameIncorrectFilesInTorrent(String torrentName) {
-        loginAndSetSID();
-        Torrent torrent = getTorrentFromName(torrentName);
+    private void renameIncorrectFilesInTorrent(Torrent torrent) {
+        torrent = setTorrentContent(torrent);
         String path = torrent.getPath();
         String hash = torrent.getHash();
-
-        path = path.substring(path.lastIndexOf("\\") + 1);
+        if (torrent.getTorrentFiles().size() == 1) {
+            path = path.replaceAll("\\\\([^\\\\]+$)|/([^/]+$)", "");
+        }
+        if (path.charAt(0) == '/') path = path.substring(path.lastIndexOf("/") + 1);
+        else path = path.substring(path.lastIndexOf("\\") + 1);
 
         Map<String, String> postBody = new HashMap<>();
         for (Map.Entry<Integer, String> torrentFile : torrent.getTorrentFiles().entrySet()) {
@@ -143,9 +162,67 @@ public class QbitAPI extends API {
         }
     }
 
-    private String makeNewPath(String path, Map.Entry<Integer, String> torrentFile) {
-        return String.format("%s/%sE%02d%s", path, path, torrentFile.getKey()+1, torrentFile.getValue().substring(torrentFile.getValue().lastIndexOf(".")));
+    public void renameIncorrectFilesInTorrentByName(String torrentName) {
+        loginAndSetSID();
+        Torrent torrent = getTorrentFromName(torrentName);
+        renameIncorrectFilesInTorrent(torrent);
     }
+
+    private String makeNewPath(String path, Map.Entry<Integer, String> torrentFile) {
+        String s = String.format("%sE%02d%s",
+                path.replaceAll(" \\(.*\\)", ""),
+                torrentFile.getKey(),
+                torrentFile.getValue().substring(torrentFile.getValue().lastIndexOf(".")));
+        if (torrentFile.getValue().contains("/")) {
+            return path + "/" + s;
+        }
+        return s;
+    }
+
+    public void setNewTorrentFiles(Map<String, String> torrents, String category) {
+        final String tmpLibPath = "/home/whitesharky/disks/a/tmp/media/" + category + "/";
+        List<String> media = new ArrayList<>(torrents.values());
+        loginAndSetSID();
+        int index = 0;
+        for (String torrentPath : torrents.keySet()) {
+            addNewTorrent(torrentPath, media.get(index++), tmpLibPath);
+            delayFor(500);
+            Torrent torrent = getTorrentList(Map.of("category", "autoNotSet", "reverse", "true")).getFirst();
+            renameIncorrectFilesInTorrent(torrent);
+            delayFor(200);
+            getResponse(makeRequest("torrents/recheck",
+                    Map.of("hashes", torrent.getHash())), getSessionCookie());
+            delayFor(200);
+            getResponse(makeRequest("torrents/setCategory",
+                    Map.of("hashes", torrent.getHash(), "category", category)), getSessionCookie());
+            delayFor(200);
+            getResponse(makeRequest("torrents/resume",
+                    Map.of("hashes", torrent.getHash())), getSessionCookie());
+        }
+    }
+
+    private void addNewTorrent(String torrentPath, String media, String tmpLibPath) {
+        Map<String, String> postBody = new HashMap<>();
+        String[] mediaNameAndMeta = media.split("\\[");
+        String mediaName = mediaNameAndMeta[0].trim().replaceAll("\\?", "");
+        String mediaMeta = mediaNameAndMeta[1].replaceAll("]", "");
+        postBody.put("urls", torrentPath);
+        postBody.put("savepath", String.format("%s%s/%s %s", tmpLibPath, mediaName, mediaName, mediaMeta));
+        postBody.put("category", "autoNotSet");
+        postBody.put("root_folder", "false");
+        postBody.put("rename", String.format("%s %s", mediaName, mediaMeta));
+        getResponse(makeRequest("torrents/add", postBody), getSessionCookie());
+    }
+
+    private void delayFor(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+//    postBody.put("urls", "/home/whitesharky/disks/a/tmp/torrents/" + torrentPath.replaceAll(".*\\\\", ""));
 
     public String getUsername() {
         return username;

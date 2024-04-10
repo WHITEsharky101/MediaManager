@@ -18,9 +18,9 @@
                     <li sec:authorize="isAuthenticated()" class="nav-item">
                         <a class="nav-link active" aria-current="page" th:href="@{/settings}">Settings</a>
                     </li>
-<!--                    <li sec:authorize="isAuthenticated()" class="nav-item">-->
-<!--                        <a class="nav-link active" aria-current="page" th:href="@{/rename}">Rename</a>-->
-<!--                    </li>-->
+                    <li sec:authorize="isAuthenticated()" class="nav-item">
+                        <a class="nav-link active" aria-current="page" th:href="@{/qbittorrent}">QbitTorrent</a>
+                    </li>
                     <li sec:authorize="hasRole('ADMIN')" class="nav-item">
                         <a class="nav-link active" aria-current="page" th:href="@{/users}">Users</a>
                     </li>

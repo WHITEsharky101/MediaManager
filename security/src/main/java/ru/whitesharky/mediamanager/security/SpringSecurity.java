@@ -32,6 +32,7 @@ public class SpringSecurity {
                                 .requestMatchers("/").permitAll()
                                 .requestMatchers("/home").permitAll()
                                 .requestMatchers("/settings").authenticated()
+                                .requestMatchers("/qbittorrent").authenticated()
                                 .requestMatchers("/**").hasRole("ADMIN")
                 ).formLogin(
                         form -> form
