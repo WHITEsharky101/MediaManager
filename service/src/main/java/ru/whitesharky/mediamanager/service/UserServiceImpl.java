@@ -83,12 +83,13 @@ public class UserServiceImpl implements UserService {
             userSettings = new UserSettings();
         }
         Set<String> set = new HashSet<>();
-        set.add(settingsDto.getPath());
-        userSettings.setPath(set);
+        set.add(settingsDto.getLibPath());
+        userSettings.setLibPath(set);
         userSettings.setHost(settingsDto.getHost());
         userSettings.setPort(settingsDto.getPort());
         userSettings.setLogin(settingsDto.getLogin());
         userSettings.setHashPassword(Base64.getEncoder().encodeToString(settingsDto.getPassword().getBytes()));
+        userSettings.setTorrentsPath(settingsDto.getTorrentsPath());
         userSettings.setUser(user);
         settingsRepository.save(userSettings);
     }

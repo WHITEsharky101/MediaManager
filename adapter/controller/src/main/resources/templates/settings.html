@@ -27,12 +27,12 @@
                 <div class="form-group mb-3">
                     <label class="form-label">Paths</label>
                     <input type="text"
-                           id="path"
-                           name="path"
+                           id="lib-path"
+                           name="lib-path"
                            class="form-control"
-                           th:field="*{path}"/>
-                    <p th:errors="*{path}" class="text-danger"
-                       th:if="${#fields.hasErrors('path')}"></p>
+                           th:field="*{libPath}"/>
+                    <p th:errors="*{libPath}" class="text-danger"
+                       th:if="${#fields.hasErrors('libPath')}"></p>
                 </div>
                 <h4 class="mb-3">Qbittorrent API</h4>
                 <div class="form-group mb-3">
@@ -74,6 +74,16 @@
                            th:field="*{password}"/>
                     <p th:errors="*{password}" class="text-danger"
                        th:if="${#fields.hasErrors('password')}"></p>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label">Torrents Path</label>
+                    <input type="text"
+                           id="torrents-path"
+                           name="torrentsPath"
+                           class="form-control"
+                           th:field="*{torrentsPath}"/>
+                    <p th:errors="*{torrentsPath}" class="text-danger"
+                       th:if="${#fields.hasErrors('torrentsPath')}"></p>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Save</button>

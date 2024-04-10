@@ -29,10 +29,11 @@ public class SettingsController {
 
     private SettingsDto mapToSettingsDto(UserSettings userSettings) {
         SettingsDto settingsDto = new SettingsDto();
-        settingsDto.setPath(userSettings.getPath().stream().findFirst().get());
+        settingsDto.setLibPath(userSettings.getLibPath().stream().findFirst().get());
         settingsDto.setHost(userSettings.getHost());
         settingsDto.setPort(userSettings.getPort());
         settingsDto.setLogin(userSettings.getLogin());
+        settingsDto.setTorrentsPath(userSettings.getTorrentsPath());
         return settingsDto;
     }
 

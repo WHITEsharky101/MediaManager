@@ -23,11 +23,12 @@ CREATE TABLE user_role
 
 CREATE TABLE user_settings
 (
-    user_id            BIGINT PRIMARY KEY,
+    user_id       BIGINT PRIMARY KEY,
     host          VARCHAR(255) NOT NULL,
     port          INT NOT NULL,
     login         VARCHAR(255) NOT NULL,
-    hash_password VARCHAR(255) NOT NULL
+    hash_password VARCHAR(255) NOT NULL,
+    torrents_path VARCHAR(255)
 );
 
 CREATE TABLE user_media

@@ -1,18 +1,19 @@
 package ru.whitesharky.mediamanager.adapter.dto;
 
 public class SettingsDto {
-    private String path;
+    private String libPath;
     private String host;
     private int port;
     private String login;
     private String password;
+    private String torrentsPath;
 
-    public String getPath() {
-        return path;
+    public String getLibPath() {
+        return libPath;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setLibPath(String libPath) {
+        this.libPath = libPath;
     }
 
     public String getHost() {
@@ -45,5 +46,13 @@ public class SettingsDto {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getTorrentsPath() {
+        return torrentsPath;
+    }
+
+    public void setTorrentsPath(String torrentsPath) {
+        this.torrentsPath = torrentsPath;
     }
 }

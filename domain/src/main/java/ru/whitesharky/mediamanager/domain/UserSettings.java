@@ -15,20 +15,22 @@ public class UserSettings {
     private int port;
     private String login;
     private String hashPassword;
+    private String torrentsPath;
     @ElementCollection
     @CollectionTable(name = "medialib_paths", joinColumns = @JoinColumn(name = "settings_id"))
-    private Set<String> path;
+    private Set<String> libPath;
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")
     private User user;
 
-    public UserSettings(String host, int port, String login, String hashPassword, Set<String> path) {
+    public UserSettings(String host, int port, String login, String hashPassword, Set<String> libPath, String torrentsPath) {
         this.host = host;
         this.port = port;
         this.login = login;
         this.hashPassword = hashPassword;
-        this.path = path;
+        this.libPath = libPath;
+        this.torrentsPath = torrentsPath;
     }
 
     public UserSettings() {
@@ -36,8 +38,9 @@ public class UserSettings {
         this.port = 8080;
         this.login = "user";
         this.hashPassword = "password";
-        this.path = new HashSet<>();
-        this.path.add("/");
+        this.libPath = new HashSet<>();
+        this.libPath.add("/");
+        this.torrentsPath = "/";
     }
 
     public String getHost() {
@@ -72,12 +75,12 @@ public class UserSettings {
         this.hashPassword = hashPassword;
     }
 
-    public Set<String> getPath() {
-        return path;
+    public Set<String> getLibPath() {
+        return libPath;
     }
 
-    public void setPath(Set<String> path) {
-        this.path = path;
+    public void setLibPath(Set<String> libPath) {
+        this.libPath = libPath;
     }
 
     public Long getId() {
@@ -94,5 +97,13 @@ public class UserSettings {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getTorrentsPath() {
+        return torrentsPath;
+    }
+
+    public void setTorrentsPath(String torrentsPath) {
+        this.torrentsPath = torrentsPath;
     }
 }
