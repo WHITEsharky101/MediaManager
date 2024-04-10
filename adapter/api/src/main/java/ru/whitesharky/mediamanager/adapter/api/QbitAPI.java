@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.whitesharky.mediamanager.domain.Torrent;
+import ru.whitesharky.mediamanager.domain.UserSettings;
 
 import java.net.HttpCookie;
 import java.net.http.HttpResponse;
@@ -19,10 +20,10 @@ public class QbitAPI extends API {
     private HttpCookie sessionCookie;
     private Long sessionExpDate;
 
-    public QbitAPI(String host, int port, String username, String password) {
-        super(host, port, "/api/v2/");
-        this.username = username;
-        this.password = password;
+    public QbitAPI(UserSettings userSettings) {
+        super(userSettings.getHost(), userSettings.getPort(), "/api/v2/");
+        this.username = userSettings.getLogin();
+        this.password = new String(Base64.getDecoder().decode(userSettings.getHashPassword()));
     }
 
     private void loginAndSetSID() {
