@@ -95,7 +95,7 @@ public class QbitAPI extends API {
     public Torrent setTorrentContent(Torrent torrent) {
         loginAndSetSID();
         ObjectMapper mapper = new ObjectMapper();
-        Set<String> torrentFilesName = new HashSet<>();
+        Set<String> torrentFilesName = new TreeSet<>();
         HttpResponse<String> response =
                 getResponse(makeRequest("torrents/files", Map.of("hash", torrent.getHash())), getSessionCookie());
         JsonNode actualObj;
@@ -107,30 +107,8 @@ public class QbitAPI extends API {
         for (JsonNode oneObj : actualObj) {
             torrentFilesName.add(oneObj.get("name").asText());
         }
-        Map<Integer, String> filesNameMap = parseNamesToMap(torrentFilesName);
-        torrent.setTorrentFiles(filesNameMap);
+        torrent.setTorrentFiles(torrentFilesName);
         return torrent;
-    }
-
-    private Map<Integer, String> parseNamesToMap(Set<String> fileNames) {
-        //pattern [S0101]/[01]
-        Map<Integer, String> filesNameMap = new HashMap<>();
-        for (String name : fileNames) {
-            Pattern pattern = Pattern.compile("\\[\\d*]");
-            Matcher matcher = pattern.matcher(name);
-            if (matcher.find()) {
-                int index = Integer.parseInt(matcher.group(0).replaceAll("[\\[\\]]", ""));
-                filesNameMap.put(index, name);
-            }
-        }
-        return filesNameMap;
-    }
-
-    public ArrayList<Torrent> setAllTorrentsContent(ArrayList<Torrent> torrentList) {
-        for (Torrent torrent : torrentList) {
-            setTorrentContent(torrent);
-        }
-        return torrentList;
     }
 
     private Torrent getTorrentFromName(String torrentName) {
@@ -153,13 +131,19 @@ public class QbitAPI extends API {
         else path = path.substring(path.lastIndexOf("\\") + 1);
 
         Map<String, String> postBody = new HashMap<>();
-        for (Map.Entry<Integer, String> torrentFile : torrent.getTorrentFiles().entrySet()) {
+        int index = 1;
+        for (String torrentFile : torrent.getTorrentFiles()) {
+            if (isTorrentFileNameContainsPattern(torrentFile)) break;
             postBody.clear();
             postBody.put("hash", hash);
-            postBody.put("oldPath", torrentFile.getValue());
-            postBody.put("newPath", makeNewPath(path, torrentFile));
+            postBody.put("oldPath", torrentFile);
+            postBody.put("newPath", makeNewPath(path, torrentFile, index++));
             getResponse(makeRequest("torrents/renameFile", postBody), getSessionCookie());
         }
+    }
+
+    private boolean isTorrentFileNameContainsPattern(String torrentFileName) {
+        return torrentFileName.matches(".*[S,s]\\d+[E,e]\\d+.*");
     }
 
     public void renameIncorrectFilesInTorrentByName(String torrentName) {
@@ -168,12 +152,12 @@ public class QbitAPI extends API {
         renameIncorrectFilesInTorrent(torrent);
     }
 
-    private String makeNewPath(String path, Map.Entry<Integer, String> torrentFile) {
+    private String makeNewPath(String path, String torrentFile, int index) {
         String s = String.format("%sE%02d%s",
                 path.replaceAll(" \\(.*\\)", ""),
-                torrentFile.getKey(),
-                torrentFile.getValue().substring(torrentFile.getValue().lastIndexOf(".")));
-        if (torrentFile.getValue().contains("/")) {
+                index,
+                torrentFile.substring(torrentFile.lastIndexOf(".")));
+        if (torrentFile.contains("/")) {
             return path + "/" + s;
         }
         return s;
@@ -221,8 +205,6 @@ public class QbitAPI extends API {
             throw new RuntimeException(e);
         }
     }
-
-//    postBody.put("urls", "/home/whitesharky/disks/a/tmp/torrents/" + torrentPath.replaceAll(".*\\\\", ""));
 
     public String getUsername() {
         return username;

@@ -35,7 +35,7 @@ public class MediaController {
     public Map<File, String> listTorrentFilesUsingJavaIO(String dir) {
         return Stream.of(Objects.requireNonNull(new File(dir).listFiles()))
                 .filter(file -> !file.isDirectory() && file.getName().endsWith(".torrent"))
-                .collect(Collectors.toMap(File::getAbsoluteFile, File::getName));
+                .collect(Collectors.toMap(File::getAbsoluteFile, File::getName, (key1, key2) -> key1, TreeMap::new));
     }
 
     @PostMapping("/qbittorrent/rename")

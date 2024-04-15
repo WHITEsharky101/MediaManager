@@ -1,6 +1,6 @@
 package ru.whitesharky.mediamanager.domain;
 
-import java.util.Map;
+import java.util.Set;
 
 public class Torrent {
     private String name;
@@ -8,7 +8,7 @@ public class Torrent {
     private String category;
     private final String hash;
     private final int addDate;
-    private Map<Integer, String> torrentFiles;
+    private Set<String> torrentFiles;
 
     public Torrent(String name, String path, String hash, String category, int date) {
         this.name = name;
@@ -50,11 +50,11 @@ public class Torrent {
         this.category = category;
     }
 
-    public Map<Integer, String> getTorrentFiles() {
+    public Set<String> getTorrentFiles() {
         return torrentFiles;
     }
 
-    public void setTorrentFiles(Map<Integer, String> torrentFiles) {
+    public void setTorrentFiles(Set<String> torrentFiles) {
         this.torrentFiles = torrentFiles;
     }
 }
