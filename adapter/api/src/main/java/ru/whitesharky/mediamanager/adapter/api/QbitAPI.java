@@ -3,12 +3,14 @@ package ru.whitesharky.mediamanager.adapter.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ru.whitesharky.mediamanager.domain.Torrent;
 import ru.whitesharky.mediamanager.domain.UserSettings;
 
+import java.net.CookieHandler;
+import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +24,7 @@ public class QbitAPI extends API {
         super(userSettings.getHost(), userSettings.getPort(), "/api/v2/");
         this.username = userSettings.getLogin();
         this.password = new String(Base64.getDecoder().decode(userSettings.getHashPassword()));
+        loginAndSetSID();
     }
 
     private void loginAndSetSID() {
@@ -29,23 +32,27 @@ public class QbitAPI extends API {
             Map<String, String> postBody = new HashMap<>();
             postBody.put("username", username);
             postBody.put("password", password);
-
+            CookieManager cookieManager = new CookieManager();
+            CookieHandler.setDefault(cookieManager);
             HttpResponse<String> response = getResponse(makeRequest("auth/login", postBody));
             Pattern pattern = Pattern.compile("=(.*?);");
             Matcher matcher = pattern.matcher(response.headers().allValues("set-cookie").getFirst());
             if (matcher.find()) {
-                setSessionCookie(matcher.group(1));
+                HttpCookie httpCookie = new HttpCookie("SID", matcher.group(1));
+                httpCookie.setVersion(0);
+                httpCookie.setPath("/");
+                setSessionCookie(httpCookie);
             }
             setSessionExpDate();
         }
     }
 
     private void setSessionExpDate() {
-        this.sessionExpDate = System.currentTimeMillis() + (getSessionTimeout()-10) * 60L;
+        this.sessionExpDate = System.currentTimeMillis() + (getSessionTimeout() - 10) * 60L;
     }
 
     private int getSessionTimeout() {
-        HttpResponse<String> response = getResponse(makeRequest("app/preferences"), getSessionCookie());
+        HttpResponse<String> response = getAppPreferences();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode actualObj;
         try {
@@ -61,149 +68,131 @@ public class QbitAPI extends API {
         return System.currentTimeMillis() <= sessionExpDate;
     }
 
-    public ArrayList<Torrent> getTorrentList(Map<String, String> parameters) {
-        loginAndSetSID();
-        HttpResponse<String> response = getResponse(makeRequest("torrents/info", parameters), getSessionCookie());
-        return splitInfoByTorrent(response.body());
+    private HttpResponse<String> getAppPreferences() {
+        return getResponse(makeRequest("app/preferences"), getSessionCookie());
     }
 
-    public ArrayList<Torrent> getTorrentList() {
+    public HttpResponse<String> getTorrentList(Map<String, String> parameters) {
+        loginAndSetSID();
+        return getResponse(makeRequest("torrents/info", parameters), getSessionCookie());
+    }
+
+    public HttpResponse<String> getTorrentList() {
         return getTorrentList(new HashMap<>());
     }
 
-    private ArrayList<Torrent> splitInfoByTorrent(String allTorrentInfo) {
-        ObjectMapper mapper = new ObjectMapper();
-        ArrayList<Torrent> torrentList = new ArrayList<>();
-        JsonNode actualObj;
-        try {
-            actualObj = mapper.readTree(allTorrentInfo);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        for (JsonNode oneObj : actualObj) {
-            torrentList.add(new Torrent(
-                    oneObj.get("name").asText(),
-                    oneObj.get("content_path").asText(),
-                    oneObj.get("hash").asText(),
-                    oneObj.get("category").asText(),
-                    oneObj.get("added_on").asInt())
-            );
-        }
-        return torrentList;
-    }
-
-    public Torrent setTorrentContent(Torrent torrent) {
+    public HttpResponse<String> getTorrentContent(String hash) {
         loginAndSetSID();
-        ObjectMapper mapper = new ObjectMapper();
-        Set<String> torrentFilesName = new TreeSet<>();
-        HttpResponse<String> response =
-                getResponse(makeRequest("torrents/files", Map.of("hash", torrent.getHash())), getSessionCookie());
-        JsonNode actualObj;
-        try {
-            actualObj = mapper.readTree(response.body());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        for (JsonNode oneObj : actualObj) {
-            torrentFilesName.add(oneObj.get("name").asText());
-        }
-        torrent.setTorrentFiles(torrentFilesName);
-        return torrent;
+        return getResponse(makeRequest("torrents/files", Map.of("hash", hash)), getSessionCookie());
     }
 
-    private Torrent getTorrentFromName(String torrentName) {
-        Torrent searchingTorrent = null;
-        ArrayList<Torrent> torrensList = getTorrentList();
-        for (Torrent torrent : torrensList) {
-            if (torrent.getName().equals(torrentName)) searchingTorrent = torrent;
-        }
-        return searchingTorrent;
-    }
-
-    private void renameIncorrectFilesInTorrent(Torrent torrent) {
-        torrent = setTorrentContent(torrent);
-        String path = torrent.getPath();
-        String hash = torrent.getHash();
-        if (torrent.getTorrentFiles().size() == 1) {
-            path = path.replaceAll("\\\\([^\\\\]+$)|/([^/]+$)", "");
-        }
-        if (path.charAt(0) == '/') path = path.substring(path.lastIndexOf("/") + 1);
-        else path = path.substring(path.lastIndexOf("\\") + 1);
-
+    public CompletableFuture<HttpResponse<String>> renameTorrentFile(String hash, String oldPath, String newPath) {
+        loginAndSetSID();
         Map<String, String> postBody = new HashMap<>();
-        int index = 1;
-        for (String torrentFile : torrent.getTorrentFiles()) {
-            if (isTorrentFileNameContainsPattern(torrentFile)) break;
-            postBody.clear();
-            postBody.put("hash", hash);
-            postBody.put("oldPath", torrentFile);
-            postBody.put("newPath", makeNewPath(path, torrentFile, index++));
-            getResponse(makeRequest("torrents/renameFile", postBody), getSessionCookie());
-        }
+        postBody.put("hash", hash);
+        postBody.put("oldPath", oldPath);
+        postBody.put("newPath", newPath);
+        return getFuture(makeRequest("torrents/renameFile", postBody), getSessionCookie());
     }
 
-    private boolean isTorrentFileNameContainsPattern(String torrentFileName) {
-        return torrentFileName.matches(".*[S,s]\\d+[E,e]\\d+.*");
-    }
-
-    public void renameIncorrectFilesInTorrentByName(String torrentName) {
+    public CompletableFuture<HttpResponse<String>> renameFolder(String hash, String oldPath, String newPath) {
         loginAndSetSID();
-        Torrent torrent = getTorrentFromName(torrentName);
-        renameIncorrectFilesInTorrent(torrent);
-    }
-
-    private String makeNewPath(String path, String torrentFile, int index) {
-        String s = String.format("%sE%02d%s",
-                path.replaceAll(" \\(.*\\)", ""),
-                index,
-                torrentFile.substring(torrentFile.lastIndexOf(".")));
-        if (torrentFile.contains("/")) {
-            return path + "/" + s;
-        }
-        return s;
-    }
-
-    public void setNewTorrentFiles(Map<String, String> torrents, String category) {
-        final String tmpLibPath = "/home/whitesharky/disks/a/tmp/media/" + category + "/";
-        List<String> media = new ArrayList<>(torrents.values());
-        loginAndSetSID();
-        int index = 0;
-        for (String torrentPath : torrents.keySet()) {
-            addNewTorrent(torrentPath, media.get(index++), tmpLibPath);
-            delayFor(500);
-            Torrent torrent = getTorrentList(Map.of("category", "autoNotSet", "reverse", "true")).getFirst();
-            renameIncorrectFilesInTorrent(torrent);
-            delayFor(200);
-            getResponse(makeRequest("torrents/recheck",
-                    Map.of("hashes", torrent.getHash())), getSessionCookie());
-            delayFor(200);
-            getResponse(makeRequest("torrents/setCategory",
-                    Map.of("hashes", torrent.getHash(), "category", category)), getSessionCookie());
-            delayFor(200);
-            getResponse(makeRequest("torrents/resume",
-                    Map.of("hashes", torrent.getHash())), getSessionCookie());
-        }
-    }
-
-    private void addNewTorrent(String torrentPath, String media, String tmpLibPath) {
         Map<String, String> postBody = new HashMap<>();
-        String[] mediaNameAndMeta = media.split("\\[");
-        String mediaName = mediaNameAndMeta[0].trim().replaceAll("\\?", "");
-        String mediaMeta = mediaNameAndMeta[1].replaceAll("]", "");
-        postBody.put("urls", torrentPath);
-        postBody.put("savepath", String.format("%s%s/%s %s", tmpLibPath, mediaName, mediaName, mediaMeta));
-        postBody.put("category", "autoNotSet");
+        postBody.put("hash", hash);
+        postBody.put("oldPath", oldPath);
+        postBody.put("newPath", newPath);
+        return getFuture(makeRequest("torrents/renameFolder", postBody), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> recheckTorrent(Set<String> hashes) {
+        loginAndSetSID();
+        return getFuture(makeRequest("torrents/recheck",
+                Map.of("hashes", String.join("|", hashes))), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> recheckTorrent(String hash) {
+        return recheckTorrent(Set.of(hash));
+    }
+
+    public CompletableFuture<HttpResponse<String>> setCategory(Set<String> hashes, String category) {
+        loginAndSetSID();
+        return getFuture(makeRequest("torrents/setCategory",
+                Map.of("hashes", String.join("|", hashes), "category", category)), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> setCategory(String hash, String category) {
+        return setCategory(Set.of(hash), category);
+    }
+
+    public CompletableFuture<HttpResponse<String>> addTorrent(Set<String> urls, Map<String, String> parameters) {
+        loginAndSetSID();
+        parameters.put("urls", String.join("\r\n", urls));
+        return getFuture(makeRequest("torrents/add", parameters), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> addTorrent(String url, String savePath, String newName, String category) {
+        Map<String, String> postBody = new HashMap<>();
+        postBody.put("savepath", savePath);
+        postBody.put("category", category);
+        postBody.put("rename", newName);
         postBody.put("root_folder", "false");
-        postBody.put("rename", String.format("%s %s", mediaName, mediaMeta));
-        getResponse(makeRequest("torrents/add", postBody), getSessionCookie());
+        postBody.put("skip_checking", "true");
+        return addTorrent(Set.of(url), postBody);
     }
 
-    private void delayFor(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    public CompletableFuture<HttpResponse<String>> resume(Set<String> hashes) {
+        loginAndSetSID();
+        return getFuture(makeRequest("torrents/resume", Map.of("hashes", String.join("|", hashes))), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> resume(String hash) {
+        return resume(Set.of(hash));
+    }
+
+    public CompletableFuture<HttpResponse<String>> pause(Set<String> hashes) {
+        loginAndSetSID();
+        return getFuture(makeRequest("torrents/pause", Map.of("hashes", String.join("|", hashes))), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> pause(String hash) {
+        return pause(Set.of(hash));
+    }
+
+    public CompletableFuture<HttpResponse<String>> delete(Set<String> hashes, Boolean deleteFiles) {
+        loginAndSetSID();
+        Map<String, String> postBody = new HashMap<>();
+        postBody.put("hashes", String.join("|", hashes));
+        postBody.put("deleteFiles", deleteFiles.toString());
+        return getFuture(makeRequest("torrents/delete", postBody), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> delete(String hash, Boolean deleteFiles) {
+        return delete(Set.of(hash), deleteFiles);
+    }
+
+    public CompletableFuture<HttpResponse<String>> setLocation(Set<String> hashes, String location) {
+        loginAndSetSID();
+        Map<String, String> postBody = new HashMap<>();
+        postBody.put("hashes", String.join("|", hashes));
+        postBody.put("location", location);
+        return getFuture(makeRequest("torrents/setLocation", postBody), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> setLocation(String hash, String location) {
+        return setLocation(Set.of(hash), location);
+    }
+
+    public CompletableFuture<HttpResponse<String>> setName(String hash, String name) {
+        loginAndSetSID();
+        Map<String, String> postBody = new HashMap<>();
+        postBody.put("hash", hash);
+        postBody.put("name", name);
+        return getFuture(makeRequest("torrents/setName", postBody), getSessionCookie());
+    }
+
+    public CompletableFuture<HttpResponse<String>> addCategory(String name) {
+        loginAndSetSID();
+        return getFuture(makeRequest("torrents/createCategory", Map.of("category", name)), getSessionCookie());
     }
 
     public String getUsername() {
@@ -226,9 +215,7 @@ public class QbitAPI extends API {
         return sessionCookie;
     }
 
-    public void setSessionCookie(String sessionID) {
-        sessionCookie = new HttpCookie("SID", sessionID);
-        sessionCookie.setVersion(0);
-        sessionCookie.setPath("/");
+    public void setSessionCookie(HttpCookie sessionCookie) {
+        this.sessionCookie = sessionCookie;
     }
 }

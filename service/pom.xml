@@ -21,6 +21,10 @@
             <groupId>ru.whitesharky</groupId>
             <artifactId>dto</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.whitesharky</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

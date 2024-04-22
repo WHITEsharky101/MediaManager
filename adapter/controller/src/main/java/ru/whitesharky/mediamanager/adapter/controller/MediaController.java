@@ -8,8 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import ru.whitesharky.mediamanager.adapter.api.QbitAPI;
-import ru.whitesharky.mediamanager.domain.UserSettings;
+import ru.whitesharky.mediamanager.service.QbitService;
 import ru.whitesharky.mediamanager.service.UserService;
 
 import java.io.File;
@@ -21,12 +20,16 @@ import java.util.stream.Stream;
 public class MediaController {
 
     private UserService userService;
+    private QbitService qbitService;
 
-    public MediaController(UserService userService) {
+    public MediaController(UserService userService, QbitService qbitService) {
         this.userService = userService;
+        this.qbitService = qbitService;
     }
+
     @GetMapping("/qbittorrent")
     public String showTorrentControlForm(Model model) {
+        qbitService.initQbitAPI();
         Map<File, String> torrentFiles = listTorrentFilesUsingJavaIO(userService.findCurrentUserSettings().getTorrentsPath());
         model.addAttribute("torrentFiles", torrentFiles);
         return "qbittorrent";
@@ -40,9 +43,7 @@ public class MediaController {
 
     @PostMapping("/qbittorrent/rename")
     public String renameTorrentFiles(@RequestParam(value = "torrentName", required = false) String torrentName) {
-        UserSettings userSettings = userService.findCurrentUserSettings();
-        QbitAPI qbitAPI = new QbitAPI(userSettings);
-        qbitAPI.renameIncorrectFilesInTorrentByName(torrentName);
+        qbitService.renameIncorrectFilesInTorrentByName(torrentName);
         return "redirect:/qbittorrent";
     }
 
@@ -58,9 +59,7 @@ public class MediaController {
                 torrents.put(torrentFile.getAbsolutePath(), torrentNamesArray[i]);
                 i++;
             }
-            UserSettings userSettings = userService.findCurrentUserSettings();
-            QbitAPI qbitAPI = new QbitAPI(userSettings);
-            qbitAPI.setNewTorrentFiles(torrents, torrentCategory);
+            qbitService.setNewTorrentFiles(torrents, torrentCategory);
         }
         return "redirect:/qbittorrent";
     }

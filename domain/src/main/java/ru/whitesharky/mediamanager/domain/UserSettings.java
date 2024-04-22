@@ -1,10 +1,12 @@
 package ru.whitesharky.mediamanager.domain;
 
 import jakarta.persistence.*;
+import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.Set;
 
+@Component
 @Entity
 @Table(name = "user_settings")
 public class UserSettings {
