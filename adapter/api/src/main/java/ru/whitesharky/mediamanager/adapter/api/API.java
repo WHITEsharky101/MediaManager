@@ -8,6 +8,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 
@@ -25,6 +27,7 @@ public abstract class API {
     protected HttpRequest makeRequest(String apiURLMethod) {
         return makeRequest(apiURLMethod, new ArrayList<>());
     }
+
     protected HttpRequest makeRequest(String apiURLMethod, ArrayList<NameValuePair> httpParameters) {
         URI uri = buildURI(apiURLMethod, httpParameters);
 
@@ -69,21 +72,39 @@ public abstract class API {
         if (cookie != null) {
             cookieManager.getCookieStore().add(request.uri(), cookie);
         }
-        try (HttpClient client = HttpClient
-                .newBuilder()
-                .cookieHandler(cookieManager)
-                .proxy(proxySelector)
-                .build()) {
-            return client
+        try {
+            return getClient(cookieManager, proxySelector)
                     .send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
+    protected CompletableFuture<HttpResponse<String>> getFuture(HttpRequest request, HttpCookie cookie, ProxySelector proxySelector) {
+        CookieManager cookieManager = new CookieManager();
+        if (cookie != null) {
+            cookieManager.getCookieStore().add(request.uri(), cookie);
+        }
+        return getClient(cookieManager, proxySelector)
+                .sendAsync(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    protected CompletableFuture<HttpResponse<String>> getFuture(HttpRequest request, HttpCookie cookie) {
+        return getFuture(request, cookie, ProxySelector.getDefault());
+    }
+
+    private HttpClient getClient(CookieManager cookieManager, ProxySelector proxySelector) {
+        return HttpClient
+                .newBuilder()
+                .cookieHandler(cookieManager)
+                .proxy(proxySelector)
+                .build();
+    }
+
     private URI buildURI(String apiURLMethod) {
         return buildURI(apiURLMethod, new ArrayList<>());
     }
+
     private URI buildURI(String apiURLMethod, ArrayList<NameValuePair> httpParameters) {
         URI uri;
         try {
