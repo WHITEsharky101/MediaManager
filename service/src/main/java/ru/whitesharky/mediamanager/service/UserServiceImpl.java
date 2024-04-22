@@ -43,13 +43,16 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
     public boolean isLoginExists(String login) {
         return userRepository.existsByLogin(login);
     }
 
+    @Override
     public boolean isEmailExists(String email) {
         return userRepository.existsByEmail(email);
     }
+
     @Override
     public User findUserByLogin(String login) {
         return userRepository.findByLoginIgnoreCase(login);
@@ -63,7 +66,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
-    private UserDto mapToUserDto(User user){
+    private UserDto mapToUserDto(User user) {
         UserDto userDto = new UserDto();
         userDto.setLogin(user.getLogin());
         userDto.setEmail(user.getEmail());
@@ -88,7 +91,8 @@ public class UserServiceImpl implements UserService {
         userSettings.setHost(settingsDto.getHost());
         userSettings.setPort(settingsDto.getPort());
         userSettings.setLogin(settingsDto.getLogin());
-        userSettings.setHashPassword(Base64.getEncoder().encodeToString(settingsDto.getPassword().getBytes()));
+        if (!userSettings.getHashPassword().equals(settingsDto.getPassword())) userSettings
+                .setHashPassword(Base64.getEncoder().encodeToString(settingsDto.getPassword().getBytes()));
         userSettings.setTorrentsPath(settingsDto.getTorrentsPath());
         userSettings.setUser(user);
         settingsRepository.save(userSettings);

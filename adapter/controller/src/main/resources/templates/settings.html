@@ -71,7 +71,7 @@
                            id="password"
                            name="password"
                            class="form-control"
-                           th:field="*{password}"/>
+                           th:value="*{password}"/>
                     <p th:errors="*{password}" class="text-danger"
                        th:if="${#fields.hasErrors('password')}"></p>
                 </div>

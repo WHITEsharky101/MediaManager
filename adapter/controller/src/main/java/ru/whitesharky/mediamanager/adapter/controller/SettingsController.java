@@ -33,6 +33,7 @@ public class SettingsController {
         settingsDto.setHost(userSettings.getHost());
         settingsDto.setPort(userSettings.getPort());
         settingsDto.setLogin(userSettings.getLogin());
+        settingsDto.setPassword(userSettings.getHashPassword());
         settingsDto.setTorrentsPath(userSettings.getTorrentsPath());
         return settingsDto;
     }
