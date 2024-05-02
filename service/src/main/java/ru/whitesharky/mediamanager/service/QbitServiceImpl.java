@@ -51,7 +51,8 @@ public class QbitServiceImpl implements QbitService {
                     oneObj.get("content_path").asText(),
                     oneObj.get("hash").asText(),
                     oneObj.get("category").asText(),
-                    oneObj.get("added_on").asInt())
+                    oneObj.get("added_on").asInt(),
+                    oneObj.get("state").asText())
             );
         }
         return torrentList;
@@ -136,8 +137,16 @@ public class QbitServiceImpl implements QbitService {
                     qbitAPI.recheckTorrent(torrent.getHash());
                     qbitAPI.setCategory(torrent.getHash(), category);
                     qbitAPI.resume(torrent.getHash());
+                    for (Torrent serchingTorrent: getTorrentList(
+                            Map.of("filter", "completed", "category", category, "sort", "name"))) {
+                        if (serchingTorrent.getName().equals(torrent.getName())
+                                && !serchingTorrent.getState().equals("checkingResumeData")) {
+                            qbitAPI.delete(serchingTorrent.getHash(), false);
+                            break;
+                        }
+                    }
                     break;
-                } catch (NullPointerException | InterruptedException e) {
+                } catch (NoSuchElementException | InterruptedException e) {
                     if (++count == maxTries) throw new RuntimeException(e);
                 }
             }

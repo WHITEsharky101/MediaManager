@@ -9,13 +9,15 @@ public class Torrent {
     private final String hash;
     private final int addDate;
     private Set<String> torrentFiles;
+    private String state;
 
-    public Torrent(String name, String path, String hash, String category, int date) {
+    public Torrent(String name, String path, String hash, String category, int date, String state) {
         this.name = name;
         this.path = path;
         this.hash = hash;
         this.category = category;
         this.addDate = date;
+        this.state = state;
     }
 
     public int getAddDate() {
@@ -56,5 +58,13 @@ public class Torrent {
 
     public void setTorrentFiles(Set<String> torrentFiles) {
         this.torrentFiles = torrentFiles;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }
