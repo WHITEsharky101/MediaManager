@@ -13,7 +13,7 @@
 <body>
 <div class="container">
     <div class="row col-md-8 offset-md-2">
-        <div class="card">
+        <div class="card px-0">
             <div class="card-header">
                 <h2 class="text-center">Settings</h2>
             </div>
@@ -23,70 +23,73 @@
             <form method="post"
                   th:action="@{/settings}"
                   th:object="${settings}">
-                <h3 class="mb-3">Lib Folders</h3>
-                <div class="form-group mb-3">
-                    <label class="form-label">Paths</label>
-                    <input type="text"
-                           id="lib-path"
-                           name="lib-path"
-                           class="form-control"
-                           th:field="*{libPath}"/>
-                    <p th:errors="*{libPath}" class="text-danger"
-                       th:if="${#fields.hasErrors('libPath')}"></p>
-                </div>
-                <h4 class="mb-3">Qbittorrent API</h4>
-                <div class="form-group mb-3">
-                    <label class="form-label">Host</label>
-                    <input type="text"
-                           id="host"
-                           name="host"
-                           class="form-control"
-                           th:field="*{host}"/>
-                    <p th:errors="*{host}" class="text-danger"
-                       th:if="${#fields.hasErrors('host')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                    <label class="form-label">Port</label>
-                    <input type="number"
-                           id="port"
-                           name="port"
-                           class="form-control"
-                           th:field="*{port}"/>
-                    <p th:errors="*{port}" class="text-danger"
-                       th:if="${#fields.hasErrors('port')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                    <label class="form-label">qBittorrent Login</label>
-                    <input type="text"
-                           id="login"
-                           name="login"
-                           class="form-control"
-                           th:field="*{login}"/>
-                    <p th:errors="*{login}" class="text-danger"
-                       th:if="${#fields.hasErrors('login')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                    <label class="form-label">qBittorrent Password</label>
-                    <input type="password"
-                           id="password"
-                           name="password"
-                           class="form-control"
-                           th:value="*{password}"/>
-                    <p th:errors="*{password}" class="text-danger"
-                       th:if="${#fields.hasErrors('password')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                    <label class="form-label">Torrents Path</label>
-                    <input type="text"
-                           id="torrents-path"
-                           name="torrentsPath"
-                           class="form-control"
-                           th:field="*{torrentsPath}"/>
-                    <p th:errors="*{torrentsPath}" class="text-danger"
-                       th:if="${#fields.hasErrors('torrentsPath')}"></p>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                <div class="container">
+                    <h3 class="mb-3">Lib Folders</h3>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Paths</label>
+                        <input type="text"
+                               id="lib-path"
+                               name="lib-path"
+                               class="form-control"
+                               th:field="*{libPath}"/>
+                        <p th:errors="*{libPath}" class="text-danger"
+                           th:if="${#fields.hasErrors('libPath')}"></p>
+                    </div>
+                    <h4 class="mb-3">Qbittorrent API</h4>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Host</label>
+                        <input type="text"
+                               id="host"
+                               name="host"
+                               class="form-control"
+                               th:field="*{host}"/>
+                        <p th:errors="*{host}" class="text-danger"
+                           th:if="${#fields.hasErrors('host')}"></p>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Port</label>
+                        <input type="number"
+                               id="port"
+                               name="port"
+                               class="form-control"
+                               th:field="*{port}"/>
+                        <p th:errors="*{port}" class="text-danger"
+                           th:if="${#fields.hasErrors('port')}"></p>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">qBittorrent Login</label>
+                        <input type="text"
+                               id="login"
+                               name="login"
+                               class="form-control"
+                               th:field="*{login}"/>
+                        <p th:errors="*{login}" class="text-danger"
+                           th:if="${#fields.hasErrors('login')}"></p>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">qBittorrent Password</label>
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               class="form-control"
+                               th:value="*{password}"/>
+                        <p th:errors="*{password}" class="text-danger"
+                           th:if="${#fields.hasErrors('password')}"></p>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Torrents Path</label>
+                        <input type="text"
+                               id="torrents-path"
+                               name="torrentsPath"
+                               class="form-control"
+                               th:field="*{torrentsPath}"/>
+                        <p th:errors="*{torrentsPath}" class="text-danger"
+                           th:if="${#fields.hasErrors('torrentsPath')}"></p>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                    <br>
                 </div>
             </form>
         </div>

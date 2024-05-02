@@ -13,7 +13,7 @@
 <body>
 <div class="container">
     <div class="row col-md-8 offset-md-2">
-        <div class="card">
+        <div class="card px-0">
             <div class="card-header">
                 <h2 class="text-center">Registration</h2>
             </div>
@@ -24,50 +24,47 @@
                   th:action="@{/register/save}"
                   th:object="${user}">
                 <div class="form-group mb-3">
-                <label class="form-label">Login</label>
-                <input type="text"
-                       id="login"
-                       name="login"
-                       class="form-control"
-                       placeholder="Enter Login"
-                       th:field="*{login}"/>
-                <p th:errors="*{login}" class="text-danger"
-                   th:if="${#fields.hasErrors('login')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                <label class="form-label">Email</label>
-                <input type="text"
-                       id="email"
-                       name="email"
-                       class="form-control"
-                       placeholder="Enter Email"
-                       th:field="*{email}"/>
-                <p th:errors="*{email}" class="text-danger"
-                   th:if="${#fields.hasErrors('email')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                <label class="form-label">Password</label>
-                <input type="password"
-                       id="password"
-                       name="password"
-                       class="form-control"
-                       placeholder="Password"
-                       th:field="*{password}"/>
-                <p th:errors="*{password}" class="text-danger"
-                   th:if="${#fields.hasErrors('password')}"></p>
-                </div>
-                <div class="form-group mb-3">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password"
-                           id="passwordConfirm"
-                           name="passwordConfirm"
-                           class="form-control"
-                           placeholder="Confirm Password"
-                           th:field="*{matchingPassword}"/>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Register</button>
-                    <span>Already registered? <a href="/" th:href="@{/login}">Login here</a></span>
+                    <div class="container">
+                        <label class="form-label">Login</label>
+                        <input type="text"
+                               id="login"
+                               name="login"
+                               class="form-control"
+                               placeholder="Enter Login"
+                               th:field="*{login}"/>
+                        <p th:errors="*{login}" class="text-danger"
+                           th:if="${#fields.hasErrors('login')}"></p>
+                        <label class="form-label">Email</label>
+                        <input type="text"
+                               id="email"
+                               name="email"
+                               class="form-control"
+                               placeholder="Enter Email"
+                               th:field="*{email}"/>
+                        <p th:errors="*{email}" class="text-danger"
+                           th:if="${#fields.hasErrors('email')}"></p>
+                        <label class="form-label">Password</label>
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               class="form-control"
+                               placeholder="Password"
+                               th:field="*{password}"/>
+                        <p th:errors="*{password}" class="text-danger"
+                           th:if="${#fields.hasErrors('password')}"></p>
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password"
+                               id="passwordConfirm"
+                               name="passwordConfirm"
+                               class="form-control"
+                               placeholder="Confirm Password"
+                               th:field="*{matchingPassword}"/>
+                        <br>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                            <span>Already registered? <a href="/" th:href="@{/login}">Login here</a></span>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>

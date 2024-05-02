@@ -12,71 +12,86 @@
 <header th:replace="fragments/header"></header>
 <body>
 <div class="container">
-    <div class="row col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="text-center">Rename</h2>
-            </div>
+    <div class="row offset-md-2">
+        <div>
+            <br>
+            <p><a href="http://192.168.1.180:8081" target="_blank" rel="noreferrer" class="btn btn-primary">Open
+                qBittorrent WebUI</a></p>
+        </div>
+        <div class="card px-0">
+            <h2 class="card-header text-center">Rename</h2>
             <div th:if="${param.error}">
                 <div class="alert alert-danger">Invalid torrent name.</div>
             </div>
             <div th:if="${param.success}">
                 <div class="alert alert-info">Files name changed.</div>
             </div>
+            <br>
             <form method="post"
                   th:action="@{/qbittorrent/rename}">
                 <div class="form-group mb-3">
-                    <label class="form-label">Torrent name</label>
-                    <input type="text"
-                           id="name"
-                           name="torrentName"
-                           class="form-control"/>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Rename</button>
+                    <div class="container">
+                        <label class="form-label">Torrent name</label>
+                        <input type="text"
+                               id="name"
+                               name="torrentName"
+                               class="form-control"/>
+                        <br>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Rename</button>
+                        </div>
+                    </div>
                 </div>
             </form>
+        </div>
+        <div class="card px-0">
+            <h2 class=" ">Add new torrents</h2>
+            <br>
             <form method="post"
                   th:action="@{/qbittorrent/addTorrent}"
                   enctype="multipart/form-data">
                 <div class="form-group mb-3">
-                    <label class="form-label">Add Torrent</label><br>
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-6">
-                                    <th:block th:each="torrentFile,iter : ${torrentFiles}">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-6">
+                                <th:block th:each="torrentFile,iter : ${torrentFiles}">
                                     <input type="checkbox" name="torrentFile" id="" th:attr="id=${iter.index}"
                                            class="btn-check" th:value="${torrentFile.key}"/>
                                     <label class="btn btn-outline-primary col-12" for="" th:attr="for=${iter.index}"
                                            th:text="${torrentFile.value}"></label><br>
-                                    </th:block>
+                                </th:block>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="torrentCategory"
+                                           id="inlineRadio1" value="Anime">
+                                    <label class="form-check-label" for="inlineRadio1">Anime</label>
                                 </div>
-                                <div class="col-6">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="torrentCategory" id="inlineRadio1" value="Anime">
-                                        <label class="form-check-label" for="inlineRadio1">Anime</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="torrentCategory" id="inlineRadio2" value="Animation">
-                                        <label class="form-check-label" for="inlineRadio2">Animation</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="torrentCategory" id="inlineRadio3" value="Movies">
-                                        <label class="form-check-label" for="inlineRadio2">Movies</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="torrentCategory" id="inlineRadio4" value="Series">
-                                        <label class="form-check-label" for="inlineRadio2">Series</label>
-                                    </div>
-                                    <textarea class="form-control"
-                                              name="torrentName"
-                                              rows="5" placeholder="Pattern: Name [Season (Dub name)]"></textarea>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="torrentCategory"
+                                           id="inlineRadio2" value="Animation">
+                                    <label class="form-check-label" for="inlineRadio2">Animation</label>
                                 </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="torrentCategory"
+                                           id="inlineRadio3" value="Movies">
+                                    <label class="form-check-label" for="inlineRadio2">Movies</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="torrentCategory"
+                                           id="inlineRadio4" value="Series">
+                                    <label class="form-check-label" for="inlineRadio2">Series</label>
+                                </div>
+                                <textarea class="form-control"
+                                          name="torrentName"
+                                          rows="5" placeholder="Pattern: Name [Season (Dub name)]"></textarea>
                             </div>
                         </div>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Add</button>
+                        <br>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
